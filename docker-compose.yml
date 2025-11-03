@@ -69,9 +69,6 @@ services:
 networks:
   radius-net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
 volumes:
   postgres_data:
