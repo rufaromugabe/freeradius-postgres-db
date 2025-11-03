@@ -9,7 +9,6 @@ Complete production-ready FreeRADIUS server with PostgreSQL backend, built with 
 - ✅ **Database Backend**: PostgreSQL for users, clients, and accounting
 - ✅ **Health Checks**: Automatic health monitoring
 - ✅ **Debug Mode**: Easy debug mode via environment variable
-- ✅ **pgAdmin**: Optional web-based database management
 - ✅ **Makefile**: Convenient management commands
 - ✅ **Sample Data**: Pre-configured test users and groups
 
@@ -19,10 +18,11 @@ Complete production-ready FreeRADIUS server with PostgreSQL backend, built with 
 
 - Docker and Docker Compose
 - `radtest` utility (optional, for testing):
+
   ```bash
   # Ubuntu/Debian
   sudo apt-get install freeradius-utils
-  
+
   # macOS
   brew install freeradius-server
   ```
@@ -133,9 +133,6 @@ make remove-user USER=testuser
 make backup         # Backup database
 make restore FILE=backups/radius_backup_20241103_120000.sql
 
-# pgAdmin
-make pgadmin        # Start pgAdmin web interface
-
 # Cleanup
 make clean          # Stop and remove all containers and volumes
 ```
@@ -144,27 +141,18 @@ make clean          # Stop and remove all containers and volumes
 
 The setup includes these pre-configured users:
 
-| Username | Password | Group | VLAN | Notes |
-|----------|----------|-------|------|-------|
-| bob | test | employees | - | Basic user |
-| alice | password123 | vip | 100 | Has VLAN assignment |
-| guest1 | guestpass | guest | - | Time-limited session |
-| admin | admin123 | - | 200 | Admin with VLAN 200 |
-| healthcheck | healthcheck | - | - | For container health checks |
+| Username    | Password    | Group     | VLAN | Notes                       |
+| ----------- | ----------- | --------- | ---- | --------------------------- |
+| bob         | test        | employees | -    | Basic user                  |
+| alice       | password123 | vip       | 100  | Has VLAN assignment         |
+| guest1      | guestpass   | guest     | -    | Time-limited session        |
+| admin       | admin123    | -         | 200  | Admin with VLAN 200         |
+| healthcheck | healthcheck | -         | -    | For container health checks |
 
 ## Database Management
 
-### Using pgAdmin
-
-```bash
-# Start pgAdmin
-make pgadmin
-
-# Access at http://localhost:5050
-# Login: admin@radius.local / admin
-```
-
 Add PostgreSQL server:
+
 - Host: `postgres`
 - Port: `5432`
 - Database: `radius`
@@ -229,18 +217,20 @@ client wifi_ap {
 ### Adding Users
 
 **Via Makefile:**
+
 ```bash
 make add-user USER=newuser PASS=newpass
 ```
 
 **Via SQL:**
+
 ```sql
 -- Simple user
-INSERT INTO radcheck (username, attribute, op, value) 
+INSERT INTO radcheck (username, attribute, op, value)
 VALUES ('newuser', 'Cleartext-Password', ':=', 'password');
 
 -- User with VLAN assignment
-INSERT INTO radcheck (username, attribute, op, value) 
+INSERT INTO radcheck (username, attribute, op, value)
 VALUES ('vlanuser', 'Cleartext-Password', ':=', 'password');
 
 INSERT INTO radreply (username, attribute, op, value) VALUES
@@ -253,7 +243,7 @@ INSERT INTO radreply (username, attribute, op, value) VALUES
 
 ```sql
 -- Create group
-INSERT INTO radgroupcheck (groupname, attribute, op, value) 
+INSERT INTO radgroupcheck (groupname, attribute, op, value)
 VALUES ('contractors', 'Auth-Type', ':=', 'Accept');
 
 -- Add group attributes
@@ -262,10 +252,10 @@ INSERT INTO radgroupreply (groupname, attribute, op, value) VALUES
 ('contractors', 'Idle-Timeout', ':=', '900');
 
 -- Assign user to group
-INSERT INTO radcheck (username, attribute, op, value) 
+INSERT INTO radcheck (username, attribute, op, value)
 VALUES ('contractor1', 'Cleartext-Password', ':=', 'pass123');
 
-INSERT INTO radusergroup (username, groupname, priority) 
+INSERT INTO radusergroup (username, groupname, priority)
 VALUES ('contractor1', 'contractors', 1);
 ```
 
@@ -303,13 +293,13 @@ docker-compose exec freeradius radiusd -X
 make sessions
 
 # Or via SQL
-SELECT 
+SELECT
     username,
     nasipaddress,
     acctstarttime,
     acctinputoctets,
     acctoutputoctets
-FROM radacct 
+FROM radacct
 WHERE acctstoptime IS NULL;
 ```
 
@@ -319,26 +309,26 @@ WHERE acctstoptime IS NULL;
 make auth-log
 
 # Or via SQL
-SELECT 
+SELECT
     username,
     reply,
     authdate,
     callingstationid
-FROM radpostauth 
-ORDER BY authdate DESC 
+FROM radpostauth
+ORDER BY authdate DESC
 LIMIT 50;
 ```
 
 ### Session History for User
 
 ```sql
-SELECT 
+SELECT
     acctstarttime,
     acctstoptime,
     acctsessiontime,
     acctinputoctets + acctoutputoctets as total_bytes,
     nasipaddress
-FROM radacct 
+FROM radacct
 WHERE username = 'bob'
 ORDER BY acctstarttime DESC;
 ```
@@ -377,33 +367,38 @@ cat backup.sql | docker exec -i freeradius-postgres psql -U radius radius
 ### Critical for Production
 
 1. **Change All Default Passwords**
+
    - PostgreSQL password in `.env`
    - RADIUS client secrets in `clients.conf` and `nas` table
-   - pgAdmin password
    - User passwords
 
 2. **Use Strong Secrets**
+
    ```bash
    # Generate random secret
    openssl rand -base64 32
    ```
 
 3. **Replace Self-Signed Certificates**
+
    - Default certs are in `/etc/raddb/certs/`
    - Replace with proper certificates for production
 
 4. **Network Security**
+
    - Restrict access to RADIUS ports (1812/1813)
    - Use firewall rules
    - Consider VPN or private networks
 
 5. **Database Security**
+
    - Don't expose PostgreSQL port externally
    - Use strong passwords
    - Enable SSL/TLS for production
    - Regular backups
 
 6. **File Permissions**
+
    ```bash
    chmod 600 .env
    chmod 600 raddb/clients.conf
@@ -433,17 +428,20 @@ docker exec freeradius-postgres pg_isready -U radius
 ### Authentication Fails
 
 1. **Enable debug mode:**
+
    ```bash
    make debug
    ```
 
 2. **Check user exists:**
+
    ```bash
    make shell-db
    SELECT * FROM radcheck WHERE username='bob';
    ```
 
 3. **Verify client secret:**
+
    - Check `clients.conf` or `nas` table
    - Must match the secret used in `radtest`
 
@@ -479,7 +477,7 @@ docker exec freeradius-server env | grep DB_
 
 - Increase PostgreSQL connection pool in SQL module
 - Add database indexes
-- Monitor with pgAdmin
+- Monitor database performance with PostgreSQL tools
 - Check container resources: `docker stats`
 
 ## Common Use Cases
@@ -487,12 +485,14 @@ docker exec freeradius-server env | grep DB_
 ### WiFi Authentication (WPA2-Enterprise)
 
 1. Add WiFi AP to database:
+
    ```sql
-   INSERT INTO nas (nasname, shortname, type, secret, description) 
+   INSERT INTO nas (nasname, shortname, type, secret, description)
    VALUES ('192.168.1.10', 'wifi-ap', 'cisco', 'secret123', 'Main WiFi AP');
    ```
 
 2. Configure AP:
+
    - RADIUS Server: Docker host IP
    - Port: 1812
    - Secret: match the database
@@ -514,6 +514,7 @@ docker exec freeradius-server env | grep DB_
 ### Guest Portal with Time Limits
 
 Users in the `guest` group automatically get:
+
 - 1 hour session timeout
 - 10 minute idle timeout
 
@@ -523,11 +524,11 @@ Users in the `guest` group automatically get:
 
 ```sql
 -- Delete accounting older than 90 days
-DELETE FROM radacct 
+DELETE FROM radacct
 WHERE acctstoptime < NOW() - INTERVAL '90 days';
 
 -- Delete old auth logs
-DELETE FROM radpostauth 
+DELETE FROM radpostauth
 WHERE authdate < NOW() - INTERVAL '90 days';
 
 -- Vacuum database
@@ -576,6 +577,7 @@ The custom entrypoint script (`docker-entrypoint.sh`) provides:
 ## Support
 
 For issues and questions:
+
 - Check the logs: `make logs`
 - Run in debug mode: `make debug`
 - Review FreeRADIUS wiki for common issues

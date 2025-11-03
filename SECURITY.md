@@ -7,7 +7,6 @@ Before deploying to production, ensure you've completed these security tasks:
 - [ ] **Change all default passwords** in `.env`:
   - `POSTGRES_PASSWORD`
   - `DB_PASSWORD`
-  - `PGADMIN_DEFAULT_PASSWORD`
 - [ ] **Update RADIUS shared secrets** in `raddb/clients.conf`
 
   - Change `secret = testing123` to strong, unique secrets
@@ -31,7 +30,6 @@ Before deploying to production, ensure you've completed these security tasks:
 - [ ] **Firewall configuration**
   - Only expose RADIUS ports (1812, 1813) to trusted networks
   - Protect PostgreSQL port (5432) - should not be publicly accessible
-  - Restrict pgAdmin access (port 5050) or disable it in production
 
 ## Database Security
 

@@ -4,7 +4,6 @@
 # Docker volumes
 postgres_data/
 radius_logs/
-pgadmin_data/
 
 # Logs
 *.log

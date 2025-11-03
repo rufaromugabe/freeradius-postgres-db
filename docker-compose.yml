@@ -72,7 +72,5 @@ networks:
 volumes:
   postgres_data:
     driver: local
-  pgadmin_data:
-    driver: local
   radius_logs:
     driver: local
