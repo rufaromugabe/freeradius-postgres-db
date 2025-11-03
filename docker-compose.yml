@@ -1,20 +1,20 @@
 # FreeRADIUS with PostgreSQL Backend
 # Docker Compose configuration for production-ready RADIUS server
+# Optimized for Coolify deployment
 #
 # Quick start:
-#   1. Copy .env.example to .env and customize
-#   2. Run: docker-compose up -d
-#   3. Test: docker-compose exec freeradius radtest bob test localhost 0 testing123
+#   1. Set environment variables in Coolify dashboard
+#   2. Deploy via Coolify
+#   3. Test: docker exec <container> radtest bob test localhost 0 testing123
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: freeradius-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: radius
-      POSTGRES_USER: radius
-      POSTGRES_PASSWORD: radiuspassword
+      POSTGRES_DB: ${POSTGRES_DB:-radius}
+      POSTGRES_USER: ${POSTGRES_USER:-radius}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
@@ -31,13 +31,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: freeradius-server
     restart: unless-stopped
     ports:
       # RADIUS authentication port
-      - "1812:1812/udp"
+      - "${RADIUS_AUTH_PORT:-1812}:1812/udp"
       # RADIUS accounting port
-      - "1813:1813/udp"
+      - "${RADIUS_ACCT_PORT:-1813}:1813/udp"
     volumes:
       - ./raddb/clients.conf:/mnt/clients.conf:ro
       - ./raddb/users:/mnt/users:ro
@@ -52,15 +51,19 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - TZ=UTC
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=radius
-      - DB_USER=radius
-      - DB_PASSWORD=radiuspassword
+      - TZ=${TZ:-UTC}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${POSTGRES_DB:-radius}
+      - DB_USER=${POSTGRES_USER:-radius}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - RADIUS_DEBUG=${RADIUS_DEBUG:-no}
-    # Uncomment if you need to debug with gdb
-    # privileged: true
+    healthcheck:
+      test: ["CMD", "radtest", "bob", "test", "localhost", "0", "testing123"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   radius-net:
