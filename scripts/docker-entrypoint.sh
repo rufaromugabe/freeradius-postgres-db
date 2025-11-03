@@ -138,6 +138,13 @@ main() {
     if [ -n "$DB_HOST" ]; then
         wait_for_postgres
         test_db_connection || exit 1
+        
+        # Initialize database schema if needed
+        if [ -f /init-database.sh ]; then
+            echo "Running database initialization check..."
+            /init-database.sh
+        fi
+        
         enable_sql_module
     fi
     

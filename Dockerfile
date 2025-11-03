@@ -18,12 +18,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /var/log/radius \
+RUN mkdir -p /var/log/radius /app/sql \
     && chown -R freerad:freerad /var/log/radius \
     && chown -R freerad:freerad /etc/freeradius/3.0
 
-# Copy entrypoint script
+# Copy SQL files for database initialization
+COPY --chmod=644 sql/schema.sql sql/seed.sql /app/sql/
+
+# Copy scripts
 COPY --chmod=755 scripts/docker-entrypoint.sh /docker-entrypoint.sh
+COPY --chmod=755 scripts/init-database.sh /init-database.sh
 
 # Expose RADIUS ports
 EXPOSE 1812/udp 1813/udp
