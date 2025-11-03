@@ -22,10 +22,11 @@ services:
     networks:
       - radius-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U radius"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   freeradius:
     build:
@@ -59,11 +60,11 @@ services:
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - RADIUS_DEBUG=${RADIUS_DEBUG:-no}
     healthcheck:
-      test: ["CMD", "radtest", "bob", "test", "localhost", "0", "testing123"]
+      test: ["CMD-SHELL", "radtest bob test localhost 0 testing123 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
 
 networks:
   radius-net:
