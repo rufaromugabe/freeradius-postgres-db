@@ -1,0 +1,108 @@
+server default {
+    listen {
+        type = auth
+        ipaddr = *
+        port = 0
+        limit {
+            max_connections = 16
+            lifetime = 0
+            idle_timeout = 30
+        }
+    }
+
+    listen {
+        ipaddr = *
+        port = 0
+        type = acct
+        limit {
+        }
+    }
+
+    authorize {
+        filter_username
+        preprocess
+        chap
+        mschap
+        digest
+        suffix
+        eap {
+            ok = return
+        }
+        
+        # Use SQL for authorization
+        sql
+        
+        # If SQL lookup fails, try files
+        -files
+        
+        expiration
+        logintime
+        pap
+    }
+
+    authenticate {
+        Auth-Type PAP {
+            pap
+        }
+
+        Auth-Type CHAP {
+            chap
+        }
+
+        Auth-Type MS-CHAP {
+            mschap
+        }
+
+        mschap
+
+        digest
+
+        eap
+    }
+
+    preacct {
+        preprocess
+        acct_unique
+        suffix
+        files
+    }
+
+    accounting {
+        detail
+        
+        # Log accounting to SQL
+        sql
+        
+        exec
+        attr_filter.accounting_response
+    }
+
+    session {
+        sql
+    }
+
+    post-auth {
+        # Log successful authentications to SQL
+        sql
+        
+        exec
+        
+        Post-Auth-Type REJECT {
+            # Log failed authentications to SQL
+            sql
+            attr_filter.access_reject
+            eap
+            remove_reply_message_if_eap
+        }
+
+        Post-Auth-Type Challenge {
+        }
+    }
+
+    pre-proxy {
+    }
+
+    post-proxy {
+        eap
+    }
+}

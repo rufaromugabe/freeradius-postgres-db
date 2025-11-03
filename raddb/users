@@ -1,0 +1,26 @@
+# FreeRADIUS User Authorization File
+# This file defines users and their authentication credentials
+
+# Test user
+bob    Cleartext-Password := "test"
+
+# Example: User with specific reply attributes
+#alice  Cleartext-Password := "password123"
+#       Reply-Message = "Welcome Alice",
+#       Framed-IP-Address = 192.168.100.10
+
+# Example: User with VLAN assignment (useful for 802.1X)
+#john   Cleartext-Password := "secure_pass"
+#       Tunnel-Type = VLAN,
+#       Tunnel-Medium-Type = IEEE-802,
+#       Tunnel-Private-Group-Id = 100
+
+# Example: User with bandwidth limits
+#guest  Cleartext-Password := "guestpass"
+#       Reply-Message = "Welcome Guest",
+#       WISPr-Bandwidth-Max-Down = 5000000,
+#       WISPr-Bandwidth-Max-Up = 1000000
+
+# Example: Default fallback (reject all others)
+#DEFAULT Auth-Type := Reject
+#        Reply-Message = "Access denied"

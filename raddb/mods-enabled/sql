@@ -1,0 +1,51 @@
+# FreeRADIUS SQL Module Configuration
+# 
+# This configures FreeRADIUS to use PostgreSQL for:
+# - User authentication (radcheck, radreply)
+# - Group management (radgroupcheck, radgroupreply)
+# - Accounting (radacct)
+# - Post-auth logging (radpostauth)
+# - NAS/Client management (nas)
+#
+# Environment variables are loaded from docker-compose.yml / .env
+
+sql {
+    driver = "rlm_sql_postgresql"
+    dialect = "postgresql"
+    
+    server = "$ENV{DB_HOST}"
+    port = $ENV{DB_PORT}
+    login = "$ENV{DB_USER}"
+    password = "$ENV{DB_PASSWORD}"
+    radius_db = "$ENV{DB_NAME}"
+    
+    pool {
+        start = 5
+        min = 4
+        max = 32
+        spare = 10
+        uses = 0
+        lifetime = 0
+        idle_timeout = 60
+    }
+    
+    read_clients = yes
+    client_table = "nas"
+    
+    # Table names expected by queries.conf
+    authcheck_table = "radcheck"
+    authreply_table = "radreply"
+    groupcheck_table = "radgroupcheck"
+    groupreply_table = "radgroupreply"
+    usergroup_table = "radusergroup"
+    delete_stale_sessions = yes
+    pool_dml = yes
+    acct_table1 = "radacct"
+    acct_table2 = "radacct"
+    postauth_table = "radpostauth"
+    group_attribute = "SQL-Group"
+    logfile = ${logdir}/sqllog.sql
+    
+    # Use the default query templates that come with FreeRADIUS
+    $INCLUDE ${modconfdir}/sql/main/${dialect}/queries.conf
+}
